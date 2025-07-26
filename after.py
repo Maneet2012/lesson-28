@@ -12,22 +12,18 @@ model.to(device)
 def generate_caption_git(image, mode):
     try:
         image = image.convert("RGB")
-        pixel_values = processor(images=image, return_tensors="pt").pixel_values.to(device)
-        input_ids = processor(text="describe the image", return_tensors="pt").input_ids.to(device)
-        
+        inputs = processor(images=image, return_tensors="pt").to(device)
         if mode == "Greedy (Fast, Deterministic)":
-            outputs = model.generate(pixel_values=pixel_values, input_ids=input_ids, max_new_tokens=30)
-        else:
-            outputs = model.generate(
-                pixel_values=pixel_values,
-                input_ids=input_ids,
+            output = model.generate(**inputs, max_new_tokens=30)
+        else:  # Sampling (more diverse)
+            output = model.generate(
+                **inputs,
                 max_new_tokens=30,
                 do_sample=True,
                 top_p=0.9,
                 temperature=1.0
             )
-
-        caption = processor.batch_decode(outputs, skip_special_tokens=True)[0]
+        caption = processor.decode(output[0], skip_special_tokens=True)
         return caption
     except Exception as e:
         return f"Error: {str(e)}"
